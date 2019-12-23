@@ -1,4 +1,14 @@
 import 'package:flutter/material.dart';
+import 'inicio.dart';
+import 'login.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+
+GoogleSignIn _googleSignIn = GoogleSignIn(
+  scopes: <String>[
+    'email',
+    'https://www.googleapis.com/auth/contacts.readonly',
+  ],
+);
 
 void main() => runApp(MyApp());
 
@@ -26,65 +36,33 @@ class Main extends StatefulWidget {
 
 class _MainState extends State<Main> {
   String user;
+  GoogleSignInAccount account;
 
   @override
   void initState() {
     super.initState();
+    _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount account) {
+      setState(() {
+        this.account = account;
+      });
+    });
     user = null;
+    _googleSignIn.signInSilently();
   }
 
-  void signOut() {
-    setState(() {
-      user = null;
-    });
+   Future<void> googleSignIn() async {
+    try {
+      await _googleSignIn.signIn();
+    } catch (error) {
+      print(error);
+    }
   }
 
-  void signIn() {
-    setState(() {
-      user = 'user';
-    });
-  }
+  Future<void> googleSignOut() => _googleSignIn.disconnect();
 
   @override
   Widget build(BuildContext context) {
-    return user == null ? new Login(signIn) : new Inicio(signOut);
+    return account == null ? new Login(googleSignIn) : new Inicio(googleSignOut);
   }
-}
-
-class Login extends StatelessWidget {
-  final Function signIn;
-
-  Login(this.signIn);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        body: Center(
-            child: RaisedButton(
-      onPressed: () => signIn(),
-      child: const Text('Entrar com o Google', style: TextStyle(fontSize: 20)),
-    )));
-  }
-}
-
-class Inicio extends StatelessWidget {
-  final Function signOut;
-
-  Inicio(this.signOut);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          title: const Text('My App'),
-        actions: <Widget>[
-            IconButton(
-              icon: const Icon(Icons.exit_to_app),
-              tooltip: 'Logout',
-              onPressed: () => signOut(),
-            )
-          ]),
-        body: Center(
-            child: Text('Olá\nUsuário', style: TextStyle(fontSize: 20))));
-  }
+  
 }
